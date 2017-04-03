@@ -2,7 +2,7 @@ import os
 import sys
 import random
 import MySQLdb as mdb
-
+from pymongo import MongoClient
 
 
 def testMysql():
@@ -213,8 +213,47 @@ def testSerialize():
     container2 = deserialize(fileName)
     for w in container2:
         print(w.toString())
+
+def testMongoClient():
+     client = MongoClient()
+     client.drop_database("test")
+     db = client["test"]
+     workerColl = db["PythonWorker"]
+     workerColl.drop()
+     workerColl = db["PythonWorker"]
+     workerColl.insert_one({"id": 1 , "name": "foo", "age": 10 , "wage": 100.0, "active": True});
+     workerColl.insert_many([
+         {"id": 2, "name": "bar", "age": 20, "wage": 200.0, "active": False},
+         {"id": 3, "name": "bim", "age": 30, "wage": 300.0, "active": True}
+     ]);
+
+
+     worker = workerColl.find_one({"id": 1});
+     print(worker["id"], worker["name"], worker["age"], worker["wage"], worker["active"])
+
+     workerList = workerColl.find()
+     for w in workerList:
+         print(w["id"], w["name"], w["age"], w["wage"], w["active"])
+
+     workerColl.update_one({"id": 1},{"$set":{"name": "newfoo"}})
+     workerColl.update_one({"id":1} , {"$set": {"age": 66}})
+     workerColl.update_one({"id":1}, {"$set": {"wage": 666.6}})
+     workerColl.update_one({"id": 1}, {"$set": {"active": False}})
+     #, "age": 66, "wage": 666.5, "active": False})
+
+
+     worker = workerColl.find_one({"id": 1})
+     print("after update")
+     print(worker["id"], worker["name"], worker["age"], worker["wage"], worker["active"])
+     #remove
+     workerColl.remove({"id": {"$gt": 2}})
+     print("after remove")
+     workerList = workerColl.find().limit(2)
+     for w in workerList:
+         print(w["id"], w["name"], w["age"], w["wage"], w["active"])
+
 def main():
-    testSerialize()
+    testMongoClient()
 
 
 if __name__ == "__main__":
